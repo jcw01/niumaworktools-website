@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>职场牛马工具集合</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dark-mode.css">
+    <!-- 基础库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    
+    <!-- PDF 相关库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    
+    <!-- 图片处理库 -->
+    <script src="https://unpkg.com/compressorjs@1.1.1/dist/compressor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Word 处理库 -->
+    <script>
+        // 动态加载 docx 库
+        (function loadDocx() {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js';
+            script.onload = function() {
+                console.log('docx library loaded successfully');
+                window.dispatchEvent(new Event('docx-ready'));
+            };
+            script.onerror = function(error) {
+                console.error('Failed to load docx library:', error);
+            };
+            document.head.appendChild(script);
+        })();
+        
+        // 配置 PDF.js worker
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof pdfjsLib !== 'undefined') {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+                console.log('PDF.js worker configured');
+            } else {
+                console.error('PDF.js not loaded');
+            }
+        });
+    </script>
+    <!-- 加载 mammoth 库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    
+    <!-- 自定义组件 -->
+    <script src="js/dateTimeDisplay.js"></script>
+    <script>
+        // 检查并初始化必要的组件
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化日期时间显示
+            const dateDisplay = new DateTimeDisplay();
+            
+            // 等待库加载完成
+            window.addEventListener('docx-ready', function() {
+                console.log('docx library is ready');
+            });
+        });
+    </script>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>职场牛马工具集合</h1>
+            <div class="header-info">
+                <div class="datetime-display">
+                    <span id="current-date">正在加载日期...</span>
+                    <span id="current-time">正在加载时间...</span>
+                </div>
+                <div id="theme-toggle">
+                    <span id="theme-status">自动主题</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="tools-grid">
+            <div class="tool-card" id="image-compress">
+                <h2>图片压缩</h2>
+                <p>支持多种格式的图片批量压缩</p>
+                <button onclick="location.href='#image-compress-section'">开始使用</button>
+            </div>
+
+            <div class="tool-card" id="image-resize">
+                <h2>图片尺寸调整</h2>
+                <p>精确调整图片尺寸和大小</p>
+                <button onclick="location.href='#image-resize-section'">开始使用</button>
+            </div>
+
+            <div class="tool-card" id="image-excel">
+                <h2>图片转Excel</h2>
+                <p>将图片批量转换为Excel文件</p>
+                <button onclick="location.href='#image-excel-section'">开始使用</button>
+            </div>
+
+            <div class="tool-card" id="pdf-word">
+                <h2>PDF转Word</h2>
+                <p>快速将PDF转换为Word文档</p>
+                <button onclick="location.href='#pdf-word-section'">开始使用</button>
+            </div>
+        </div>
+
+        <!-- 工具详细部分 -->
+        <section id="image-compress-section" class="tool-section">
+            <div class="tool-container">
+                <h2>图片压缩工具</h2>
+                <div class="upload-area" id="compress-upload-area">
+                    <input type="file" id="compress-file-input" multiple accept="image/*">
+                    <div class="upload-zone" id="compress-drop-zone">
+                        <p>拖拽图片到这里或点击选择文件</p>
+                        <p class="supported-formats">支持的格式: JPG, JPEG, PNG, GIF</p>
+                    </div>
+                    <div class="status-text"></div>
+                </div>
+                <div class="compression-options">
+                    <h3>压缩选项</h3>
+                    <select id="compression-level">
+                        <option value="high">高质量 (轻度压缩)</option>
+                        <option value="medium" selected>中等质量 (推荐)</option>
+                        <option value="low">低质量 (最大压缩)</option>
+                    </select>
+                    <button id="start-compress" class="action-button" disabled>开始压缩</button>
+                </div>
+                <div class="progress-bar" style="display: none;">
+                    <div class="progress"></div>
+                    <span class="progress-text">0%</span>
+                </div>
+                <div id="compress-preview-container" class="preview-container"></div>
+                <div class="result-actions" style="display: none;">
+                    <button id="download-all" class="action-button">下载所有文件</button>
+                    <button id="clear-compress" class="action-button secondary">清除</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 图片尺寸调整工具内容 -->
+        <section id="image-resize-section" class="tool-section">
+            <div class="tool-container">
+                <h2>图片尺寸调整</h2>
+                <div class="upload-area" id="resize-upload-area">
+                    <input type="file" id="resize-file-input" multiple accept="image/*">
+                    <div class="upload-zone" id="resize-drop-zone">
+                        <p>拖拽图片到这里或点击选择文件</p>
+                        <p class="supported-formats">支持的格式: JPG, JPEG, PNG, GIF</p>
+                    </div>
+                    <div class="upload-status" style="display: none;">
+                        <div class="spinner"></div>
+                        <span class="status-text">正在上传...</span>
+                    </div>
+                </div>
+                <div class="resize-options">
+                    <div class="dimension-inputs">
+                        <div class="input-group">
+                            <label>宽度 (px):</label>
+                            <input type="number" id="width-input" min="1">
+                        </div>
+                        <div class="input-group">
+                            <label>高度 (px):</label>
+                            <input type="number" id="height-input" min="1">
+                        </div>
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="maintain-aspect-ratio" checked>
+                            保持宽高比
+                        </label>
+                    </div>
+                    <div class="size-limit">
+                        <label>文件大小限制 (KB):</label>
+                        <input type="number" id="size-limit-input" min="1">
+                    </div>
+                    <button id="start-resize" class="action-button" disabled>调整尺寸</button>
+                </div>
+                <div class="progress-bar" style="display: none;">
+                    <div class="progress"></div>
+                    <span class="progress-text">0%</span>
+                </div>
+                <div id="resize-preview-container" class="preview-container"></div>
+                <div class="result-actions" style="display: none;">
+                    <button id="download-resized" class="action-button">下载处理后的图片</button>
+                    <button id="clear-resize" class="action-button secondary">清除</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 图片转Excel工具内容 -->
+        <section id="image-excel-section" class="tool-section">
+            <div class="tool-container">
+                <h2>图片转Excel</h2>
+                <div class="upload-area" id="excel-upload-area">
+                    <input type="file" id="excel-file-input" multiple accept="image/*">
+                    <div class="upload-zone" id="excel-drop-zone">
+                        <p>拖拽图片到这里或点击选择文件</p>
+                        <p class="supported-formats">支持的格式: JPG, JPEG, PNG, GIF</p>
+                    </div>
+                    <div class="upload-status" style="display: none;">
+                        <div class="spinner"></div>
+                        <span class="status-text">正在上传...</span>
+                    </div>
+                </div>
+                <div class="excel-options">
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="excel-output" value="single" checked>
+                            所有图片保存到一个工作簿
+                        </label>
+                        <label>
+                            <input type="radio" name="excel-output" value="multiple">
+                            每个图片单独保存为工作簿
+                        </label>
+                    </div>
+                    <button id="convert-to-excel" class="action-button" disabled>转换为Excel</button>
+                </div>
+                <div class="progress-bar" style="display: none;">
+                    <div class="progress"></div>
+                    <span class="progress-text">0%</span>
+                </div>
+                <div id="excel-preview-container" class="preview-container"></div>
+                <div class="result-actions" style="display: none;">
+                    <button id="clear-excel" class="action-button secondary">清除</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PDF转Word工具内容 -->
+        <section id="pdf-word-section" class="tool-section">
+            <div class="tool-container">
+                <h2>PDF转Word</h2>
+                <div class="upload-area" id="pdf-upload-area">
+                    <input type="file" id="pdf-file-input" multiple accept=".pdf">
+                    <div class="upload-zone" id="pdf-drop-zone">
+                        <p>拖拽PDF到这里或点击选择文件</p>
+                        <p class="supported-formats">支持格式: PDF</p>
+                    </div>
+                    <div class="file-info" style="display: none;">
+                        <p class="file-name">文件名: <span></span></p>
+                        <p class="file-size">文件大小: <span></span></p>
+                    </div>
+                    <div class="status-text"></div>
+                </div>
+                <div class="conversion-options">
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="word-format" value="docx" checked>
+                            转换为 DOCX (Word 2007+)
+                        </label>
+                        <label>
+                            <input type="radio" name="word-format" value="doc">
+                            转换为 DOC (Word 97-2003)
+                        </label>
+                    </div>
+                    <button id="convert-to-word" class="action-button" disabled>开始转换</button>
+                </div>
+                <div class="progress-bar" style="display: none;">
+                    <div class="progress"></div>
+                    <span class="progress-text">0%</span>
+                </div>
+                <div id="pdf-preview-container" class="preview-container"></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/main.js"></script>
+    <script src="js/themeManager.js"></script>
+    <script src="js/imageProcessor.js"></script>
+    <script src="js/excelConverter.js"></script>
+    <script src="js/pdfConverter.js"></script>
+    <script>
+        console.log('页面加载完成');
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Error:', msg);
+            console.error('URL:', url);
+            console.error('Line:', lineNo);
+            console.error('Column:', columnNo);
+            console.error('Error object:', error);
+            return false;
+        };
+    </script>
+</body>
+</html> 
